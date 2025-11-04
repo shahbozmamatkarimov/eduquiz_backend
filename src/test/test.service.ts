@@ -177,7 +177,7 @@ export class TestsService {
       }
 
       const tests = await this.testsRepository.findAll({
-        where: {},
+        where: { lesson_id },
       });
 
       if (!tests) {

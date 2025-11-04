@@ -56,19 +56,19 @@ export class LessonService {
       }
 
       const lessons: any = await this.lessonRepository.findAll({
-        // attributes: {
-        //   include: [
-        //     [
-        //       Sequelize.literal(`
-        //         COALESCE((
-        //           SELECT COUNT(*) FROM "likes"
-        //           WHERE "likes"."lesson_id" = "Lesson"."id"
-        //         )::int, 0)
-        //       `),
-        //       'likes_count',
-        //     ],
-        //   ]
-        // },
+        attributes: {
+          include: [
+            [
+              Sequelize.literal(`
+                COALESCE((
+                  SELECT COUNT(*) FROM "tests"
+                  WHERE "tests"."lesson_id" = "Lesson"."id"
+                )::int, 0)
+              `),
+              'tests_count',
+            ],
+          ]
+        },
         order: [['id', 'ASC']],
       });
       // if (!lessons.length) {
