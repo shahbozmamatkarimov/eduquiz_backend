@@ -92,7 +92,7 @@ import { ChatModule } from './chat/chat.module';
       // autoLoadModels: true,
       // synchronize: true,
       // sync: { alter: true },
-      logging: true,
+      logging: false,
       dialectModule: pg,
       dialectOptions: {
         ssl: {
