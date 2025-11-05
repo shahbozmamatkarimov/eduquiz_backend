@@ -55,8 +55,6 @@ export class Tests extends Model<Tests, TestsAttributes> {
   @ForeignKey(() => User)
   @Column({
     type: DataType.INTEGER,
-    unique: true,
-    allowNull: true,
     onDelete: 'SET NULL',
   })
   user_id: number;
