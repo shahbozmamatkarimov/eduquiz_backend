@@ -19,7 +19,7 @@ import { UserService } from '../user/user.service';
 import { RoleService } from '../role/role.service';
 import { extractUserIdFromToken } from 'src/utils/token';
 import { JwtService } from '@nestjs/jwt';
-import { ChatGateway } from 'src/gateway/gateway';
+import { ChatGateway } from '../gateway/gateway';
 import { TestsService } from 'src/test/test.service';
 let connectedUsers: Record<string, { id: string; name: string; role: string, code: string }> = {};
 let trueAnswers: Record<string, { name: string; code: string, variant: number, countdown: number }> = {};
