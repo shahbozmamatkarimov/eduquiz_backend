@@ -27,16 +27,16 @@ async function bootstrap() {
     const PORT = process.env.PORT || 4200;
     app.enableCors();
     // CORS sozlash
-    // app.enableCors({
-    //   origin: [
-    //     'http://localhost:3000',
-    //     'https://vercel-backend-bay.vercel.app',
-    //     'https://eduquiz.uz'
-    //   ],
-    //   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-    //   allowedHeaders: 'Content-Type, Authorization',
-    //   credentials: true
-    // });
+    app.enableCors({
+      origin: [
+        'http://localhost:3000',
+        'https://eduquiz-backend.vercel.app',
+        'https://eduquiz-front.vercel.app'
+      ],
+      methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+      allowedHeaders: 'Content-Type, Authorization',
+      credentials: true
+    });
     //   app.enableCors({
     //     origin: true,
     //     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
