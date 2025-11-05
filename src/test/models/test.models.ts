@@ -1,28 +1,15 @@
 import { BelongsTo, Column, DataType, ForeignKey, HasMany, Model, Table } from 'sequelize-typescript';
 import { Test_settings } from '../../test_settings/models/test_settings.models';
 import { Lesson } from 'src/lesson/models/lesson.models';
+import { User } from 'src/user/models/user.models';
 
 interface TestsAttributes {
-  lesson_id: number;
   question: string;
   variants: string[];
-  true_answer: number[];
-  type: TestType;
-}
-
-export enum TestType {
-  variant = 'variant',
-  multiple = 'multiple',
-  fill = 'fill',
-  customizable = 'customizable',
-  deleted = 'deleted',
-}
-
-export enum ActionType {
-  old = 'old',
-  new = 'new',
-  deleted = 'deleted',
-  edited = 'edited',
+  true_answer: number;
+  type: string;
+  code: string;
+  user_id: number;
 }
 
 @Table({ tableName: 'tests' })
@@ -33,17 +20,6 @@ export class Tests extends Model<Tests, TestsAttributes> {
     primaryKey: true,
   })
   id: number;
-
-  @ForeignKey(() => Lesson)
-  @Column({
-    type: DataType.INTEGER,
-    allowNull: true,
-    onDelete: 'SET NULL',
-  })
-  lesson_id: number;
-
-  @BelongsTo(() => Lesson)
-  lesson: Lesson[];
 
   @Column({
     type: DataType.STRING,
@@ -58,16 +34,33 @@ export class Tests extends Model<Tests, TestsAttributes> {
   variants: string[];
 
   @Column({
-    type: DataType.ARRAY(DataType.INTEGER),
+    type: DataType.INTEGER,
     allowNull: false,
   })
-  true_answer: number[];
+  true_answer: number;
 
   @Column({
-    type: DataType.ENUM({
-      values: Object.keys(TestType),
-    }),
-    defaultValue: TestType.variant,
+    type: DataType.STRING,
+    allowNull: false,
   })
-  type: TestType;
+  type: string;
+
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+  })
+  code: string;
+
+  @ForeignKey(() => User)
+  @Column({
+    type: DataType.INTEGER,
+    unique: true,
+    allowNull: true,
+    onDelete: 'SET NULL',
+  })
+  user_id: number;
+
+  @BelongsTo(() => User)
+  user: User;
 }

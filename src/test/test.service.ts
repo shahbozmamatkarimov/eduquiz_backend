@@ -5,9 +5,9 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { ActionType, Tests } from './models/test.models';
+import { Tests } from './models/test.models';
 import { InjectModel } from '@nestjs/sequelize';
-import { QuestionDto, TestsDto } from './dto/test.dto';
+import { TestsDto } from './dto/test.dto';
 import { Sequelize } from 'sequelize-typescript';
 import { CheckDto } from './dto/check.dto';
 import { ReytingService } from '../reyting/reyting.service';
@@ -15,6 +15,7 @@ import { ReytingDto } from '../reyting/dto/reyting.dto';
 import { FilesService } from 'src/files/files.service';
 import { Test_settings } from 'src/test_settings/models/test_settings.models';
 import { LessonService } from 'src/lesson/lesson.service';
+import { generate } from 'otp-generator';
 
 @Injectable()
 export class TestsService {
@@ -28,49 +29,34 @@ export class TestsService {
 
   async create(testsDto: TestsDto, user_id: number): Promise<object> {
     try {
-      const {
-        test_type,
-        test,
-        lesson_id,
-        start_date,
-        end_date,
-        sort_level,
-        period,
-        mix,
-      } = testsDto;
+      // const {
+      //   test,
+      // } = testsDto;
 
       let variants: string[];
-      if (start_date || end_date || sort_level || period) {
-        await this.test_settingsService.create({
-          test_type,
-          lesson_id,
-          start_date,
-          end_date,
-          sort_level,
-          period,
-          mix,
-        });
-      }
-      for (let i = 0; i < test.length; i++) {
-        variants = Object.values(test[i].variants);
-        console.log(test[i].is_action, '2303');
-        if (test[i].is_action == ActionType.edited && test[i].id) {
-          await this.update(test[i].id, test[i])
-        } else if (test[i].is_action == ActionType.deleted && test[i].id) {
-          await this.delete(test[i].id)
-        } else if (test[i].is_action != ActionType.old) {
-          await this.testsRepository.create({
-            lesson_id,
-            question: test[i].question,
-            variants,
-            type: test[i].type,
-            true_answer: test[i].true_answer,
-          });
-        }
-      }
+
+      variants = testsDto.variants;
+
+      const code = generate(4, {
+        upperCaseAlphabets: false,
+        lowerCaseAlphabets: false,
+        specialChars: false,
+      });
+
+      const test = await this.testsRepository.create({
+        question: testsDto.question,
+        variants,
+        type: testsDto.type,
+        true_answer: testsDto.true_answer,
+        code,
+        user_id,
+      });
+
+
       return {
         statusCode: HttpStatus.OK,
         message: 'Created successfully',
+        test,
       };
     } catch (error) {
       throw new BadRequestException(error.message);
@@ -154,82 +140,47 @@ export class TestsService {
     }
   }
 
-  async getById(lesson_id: number, user_id: number) {
+  async getById(id: number, user_id: number) {
     try {
-      // const test_settings: any =
-      //   await this.test_settingsService.getByLessonId(id);
-      // console.log(test_settings);
-      // console.log(
-      //   new Date(test_settings?.data?.end_date).getTime(),
-      //   'test2303',
-      // );
-      if (
-        false
-        // new Date(test_settings?.data?.start_date).getTime() >
-        // new Date().getTime()
-      ) {
-        throw new BadRequestException('start date is invalid');
-      } else if (
-        // new Date(test_settings?.data?.end_date).getTime() < new Date().getTime()
-        false
-      ) {
-        throw new BadRequestException('end date is invalid');
-      }
-
-      const tests = await this.testsRepository.findAll({
-        where: { lesson_id },
+      const tests = await this.testsRepository.findByPk(id, {
+        attributes: { exclude: ['true_answer'] },
       });
 
       if (!tests) {
         throw new NotFoundException('Tests not found');
       }
 
-      const category: any = await this.testsRepository.findOne({
-        where: {},
-      });
-      const lesson: any = await this.lessonService.getById(lesson_id);
-      const test_settings: any = await this.test_settingsService.getByLessonId(lesson_id);
-      let randomizedVariants: any;
-      if (lesson.user_id != user_id) {
-        if (test_settings.test_type != 'vocabulary') {
-          // randomizedVariants = this.shuffle(tests).map((variant) => {
-          //   const randomizedOptions = this.shuffle(variant.get('variants'));
-          //   return {
-          //     ...variant.toJSON(),
-          //     question: this.maskMentions(variant.question),
-          //     variants: randomizedOptions,
-          //   };
-          // });
-        } else {
-          randomizedVariants = this.shuffle(tests).map((variant) => {
-            const testL: number = tests.length || 2;
-            const randomVariants = [];
-            const currentVariant = variant.get('variants')[0];
+      return tests;
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
 
-            while (randomVariants.length < 3) {
-              const r = Math.floor(Math.random() * testL);
-              const candidate = tests[r].variants[0];
+  async getByIdWithAnswer(id: number, user_id: number) {
+    try {
+      const tests = await this.testsRepository.findByPk(id);
 
-              // Faqat bir xil bo'lmagan va takrorlanmagan variantlar qo'shiladi
-              if (candidate !== currentVariant && !randomVariants.includes(candidate)) {
-                randomVariants.push(candidate);
-              }
-            }
-            const randomizedOptions = this.shuffle([...randomVariants, variant.get('variants')[0]]);
-            return {
-              ...variant.toJSON(),
-              question: this.maskMentions(variant.question),
-              variants: randomizedOptions,
-            };
-          });
-        }
+      if (!tests) {
+        throw new NotFoundException('Tests not found');
       }
-      return {
-        user_id: lesson?.user_id,
-        lesson,
-        test: randomizedVariants || tests,
-        test_settings,
-      };
+
+      return tests;
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+
+  async checkCode(code: string, user_id: number) {
+    try {
+      const tests = await this.testsRepository.findOne({
+        where: { code }
+      });
+
+      if (!tests) {
+        throw new NotFoundException('Tests not found');
+      }
+
+      return true;
     } catch (error) {
       throw new BadRequestException(error.message);
     }
@@ -256,14 +207,14 @@ export class TestsService {
         }
         return [id, [false], test];
       } else {
-        for (let i of test.true_answer) {
-          if (test.variants[i] == answer[0][t]) {
-            true_list.push(true);
-          } else {
-            true_list.push(false);
-          }
-          t++;
-        }
+        // for (let i of test.true_answer) {
+        //   if (test.variants[i] == answer[0][t]) {
+        //     true_list.push(true);
+        //   } else {
+        //     true_list.push(false);
+        //   }
+        //   t++;
+        // }
       }
       if (!true_list?.length) {
         true_list.push(false, test);
@@ -275,56 +226,22 @@ export class TestsService {
   }
 
   async checkAnswers(
-    user_id: number,
-    lesson_id: number,
-    checkDto: CheckDto,
-  ): Promise<object> {
-    const { answers } = checkDto;
-    let message: string;
+    code: string,
+    true_answer: number
+  ): Promise<boolean> {
     try {
-      const results = {};
-      let student: any;
-      let res: object, id: number, answer: string;
-      for (let i of answers) {
-        if (!i?.length) {
-          continue
-        }
-        id = +i[0];
-        answer = i[1];
-        res = await this.checkById(id, answer);
-        results[res[0]] = this.checkAnswerList(res[1]);
-      }
-      let ball = 0;
-      for (let i in results) {
-        if (results[i]) {
-          ball += 1;
-        }
-      }
-      const percentage = (ball / Object.keys(results)?.length) * 100;
-      console.log(percentage);
-      // if (percentage >= 70) {
-      const data: ReytingDto = {
-        // role_id,
-        ball,
-        lesson_id,
-      };
-      const reyting_data: any = await this.reytingService.create(
-        data,
-        user_id,
-      );
-      // await this.userStepService.create({ lesson_id, role_id });
-      message = 'Your reyting has been created!'
-      if (reyting_data.message == 'Already added!') {
-        message = 'Already added!';
-      }
-      // }
+      const test = await this.testsRepository.findOne({
+        where: { code }
+      });
 
-      return {
-        results,
-        ball: [percentage, ball],
-        student,
-        message,
-      };
+      if (!test) {
+        throw new NotFoundException('Tests not found');
+      }
+
+      if (test.true_answer == true_answer) {
+        return true;
+      }
+      return false;
     } catch (error) {
       throw new BadRequestException(error.message);
     }
@@ -371,27 +288,27 @@ export class TestsService {
     }
   }
 
-  async update(id: number, questionDto: QuestionDto): Promise<object> {
-    try {
-      const tests = await this.testsRepository.findByPk(id);
-      if (!tests) {
-        throw new NotFoundException('Tests not found');
-      }
-      const update = await this.testsRepository.update(questionDto, {
-        where: { id },
-        returning: true,
-      });
-      return {
-        statusCode: HttpStatus.OK,
-        message: 'Updated successfully',
-        data: {
-          tests: update[1][0],
-        },
-      };
-    } catch (error) {
-      throw new BadRequestException(error.message);
-    }
-  }
+  // async update(id: number, questionDto: QuestionDto): Promise<object> {
+  //   try {
+  //     const tests = await this.testsRepository.findByPk(id);
+  //     if (!tests) {
+  //       throw new NotFoundException('Tests not found');
+  //     }
+  //     const update = await this.testsRepository.update(questionDto, {
+  //       where: { id },
+  //       returning: true,
+  //     });
+  //     return {
+  //       statusCode: HttpStatus.OK,
+  //       message: 'Updated successfully',
+  //       data: {
+  //         tests: update[1][0],
+  //       },
+  //     };
+  //   } catch (error) {
+  //     throw new BadRequestException(error.message);
+  //   }
+  // }
 
   async delete(id: number): Promise<object> {
     try {

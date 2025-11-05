@@ -1,10 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsArray, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
-import { Test_settingsDto } from 'src/test_settings/dto/test_settings.dto';
-import { ActionType, TestType } from '../models/test.models';
 
-export class QuestionDto {
+export class TestsDto {
   @ApiProperty({
     example: 1,
     description: 'id of the test',
@@ -38,54 +36,14 @@ export class QuestionDto {
     description: 'True answer',
   })
   @IsNotEmpty()
-  @IsArray()
-  true_answer: number[];
-
-  @ApiProperty({
-    example: 1,
-    description: 'Test type',
-  })
-  @IsNotEmpty()
-  @IsEnum(TestType)
-  type: TestType;
-
-
-  @ApiProperty({
-    example: 1,
-    description: 'Test type',
-    default: ActionType.new,
-  })
-  @IsOptional()
-  @IsEnum(ActionType)
-  @Transform(({ value }) => (value === undefined ? ActionType.new : value))
-  is_action: ActionType;
-}
-
-export class TestsDto extends Test_settingsDto {
-  @ApiProperty({
-    example: 1,
-    description: 'Test id of the tests',
-  })
-  @IsNotEmpty()
   @IsNumber()
-  lesson_id: number;
+  true_answer: number;
 
   @ApiProperty({
-    type: [QuestionDto],
-    description: 'Array of test questions',
+    example: "Test",
+    description: 'True answer',
   })
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => QuestionDto)
-  test: QuestionDto[];
-
-  @ApiProperty({
-    example: 1,
-    description: 'Test id of the tests',
-  })
-  @IsOptional()
-  // @IsArray()
-  // @ValidateNested({ each: true })
-  // @Type(() => QuestionDto)
-  files: any[];
+  @IsNotEmpty()
+  @IsString()
+  type: string;
 }

@@ -37,6 +37,7 @@ import pg from "pg"
 import { Test_settings } from './test_settings/models/test_settings.models';
 import { Lesson } from './lesson/models/lesson.models';
 import { LessonModule } from './lesson/lesson.module';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
@@ -119,6 +120,7 @@ import { LessonModule } from './lesson/lesson.module';
     ResetpasswordModule,
     // BotModule,
     StripeModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [
